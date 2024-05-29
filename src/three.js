@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import Logo from './logo_background_white.png';
+import Logo from './test.jpeg';
 
 import {
   Mesh,
@@ -14,7 +14,7 @@ import {
 
 export const ThreeCanvas = () => {
   const canvasRef = useRef(null);
-  let easeFactor = 0.02;
+  let easeFactor = 0.92;
   let mousePosition = { x: 0.5, y: 0.5 };
   let targetMousePosition = { x: 0.5, y: 0.5 };
   let aberrationIntensity = 0.0;
@@ -45,18 +45,18 @@ export const ThreeCanvas = () => {
       const uniforms = {
         u_mouse: { value: new Vector2() },
         u_prevMouse: { value: new Vector2() },
-        u_aberrationIntensity: { value: 0.1 },
+        u_aberrationIntensity: { value: 0.8 },
         u_texture: { value: texture },
       };
 
       const material = new ShaderMaterial({
         uniforms,
         vertexShader: `
-           varying vec2 vUv;
-           void main() {
-             vUv = uv;
-             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-           }
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
         `,
         fragmentShader: `
         varying vec2 vUv;
@@ -64,26 +64,15 @@ export const ThreeCanvas = () => {
         uniform vec2 u_mouse;
         uniform vec2 u_prevMouse;
         uniform float u_aberrationIntensity;
-    
-        void main() {
-            vec2 gridUV = floor(vUv * vec2(20.0, 400.0)) / vec2(400.0, 400.0);
-            vec2 centerOfPixel = gridUV + vec2(1.0/400.0, 1.0/20.0);
-            
-            vec2 mouseDirection = u_mouse - u_prevMouse;
-            
-            vec2 pixelToMouseDirection = centerOfPixel - u_mouse;
-            float pixelDistanceToMouse = length(pixelToMouseDirection);
-            float strength = smoothstep(0.3, 0.0, pixelDistanceToMouse);
-     
-            vec2 uvOffset = strength * - mouseDirection * 0.2;
-            vec2 uv = vUv - uvOffset;
-    
-            vec4 colorR = texture2D(u_texture, uv + vec2(strength * u_aberrationIntensity * 0.9, 0.0));
-            vec4 colorG = texture2D(u_texture, uv);
-            vec4 colorB = texture2D(u_texture, uv - vec2(strength * u_aberrationIntensity * 0.9, 0.0));
-    
-            gl_FragColor = vec4(colorR.r, colorG.g, colorB.b, 1.0);
-        }
+
+           void main() {
+
+            vec2 mouseDistortion = u_mouse * 2.0 - 1.0;
+            vec2 prevMouseDistortion = u_prevMouse * 2.0 - 1.0;
+            vec2 distortion = mix(prevMouseDistortion, mouseDistortion, u_aberrationIntensity);
+            vec2 uv = vUv + distortion * 0.1;
+            gl_FragColor = texture2D(u_texture, uv);
+           }
         `,
       });
 
